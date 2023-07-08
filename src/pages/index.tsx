@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import { firestore } from "../firebase/clientApp";
+import { firestore } from "../../firebase/clientApp";
 import {
   collection,
   QueryDocumentSnapshot,
@@ -11,26 +11,33 @@ import {
 } from "@firebase/firestore";
 import { useEffect, useState } from "react";
 
-const calendarDayCollection = collection(firestore, "dayData");
+const todosCollection = collection(firestore, "dayTodos");
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
-  const [dayData, setDayData] = useState<QueryDocumentSnapshot<DocumentData>>();
+  const [todos, setTodos] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
 
-  const getDayData = async () => {
-    const dayDataQuery = query(daysCollection, where("id", "==", true));
+  const getTodos = async () => {
+    const todosQuery = query(
+      todosCollection,
+      where("done", "==", false),
+      limit(9)
+    );
 
-    const querySnapshot = await getDocs(dayDataQuery);
+    const querySnapshot = await getDocs(todosQuery);
 
-    const result: QueryDocumentSnapshot<DocumentData> = querySnapshot;
+    const result: QueryDocumentSnapshot<DocumentData>[] = [];
+    querySnapshot.forEach((snapshot) => {
+      result.push(snapshot);
+    });
 
-    setDayData(result);
+    setTodos(result);
   };
 
   useEffect(() => {
-    getDayData();
+    getTodos();
 
     setTimeout(() => {
       setLoading(false);
@@ -50,7 +57,16 @@ export default function Home() {
             <h2>Loading</h2>
           </div>
         ) : (
-          <p>dayData</p>
+          todos.map((todo) => {
+            return (
+              <div>
+                <h2>{todo.data.arguments["title"]}</h2>
+                <p>{todo.data.arguments["description"]}</p>
+                <button type="button">Mark as done</button>
+                <button type="button">Delete</button>
+              </div>
+            );
+          })
         )}
       </div>
     </main>
